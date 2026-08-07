@@ -13,8 +13,11 @@ import {
 } from "firebase/auth";
 
 const apiKey = import.meta.env.VITE_FIREBASE_API_KEY;
-const authDomain = import.meta.env.VITE_FIREBASE_AUTH_DOMAIN;
+const configuredAuthDomain = import.meta.env.VITE_FIREBASE_AUTH_DOMAIN;
 const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;
+const authDomain = typeof window !== "undefined" && window.location.hostname.endsWith(".vercel.app")
+  ? window.location.hostname
+  : configuredAuthDomain;
 
 // 환경변수 누락 시 친절한 경고 (앱은 일단 뜨게)
 if (!apiKey || !projectId) {
