@@ -36,6 +36,7 @@ const RECENT_WINDOW = 7 * 86400000;
 export default function SharedMonthlyCalendarKR() {
   const today = useMemo(() => atMidnight(new Date()), []);
   const embedMode = useMemo(() => new URLSearchParams(window.location.search).get("embed") === "1", []);
+  const standaloneUrl = useMemo(() => `${window.location.origin}${window.location.pathname}`, []);
   const [viewDate, setViewDate] = useState(today);
   const [selectedDate, setSelectedDate] = useState(today);
   const [events, setEvents] = useState({});
@@ -141,17 +142,17 @@ export default function SharedMonthlyCalendarKR() {
     }
   };
 
-  return <div className="min-h-screen w-full min-w-0 max-w-full overflow-x-hidden bg-slate-100 text-slate-950 lg:flex lg:h-dvh lg:flex-col lg:overflow-hidden">
+  return <div className="min-h-screen w-full min-w-0 max-w-full overflow-x-hidden bg-slate-100 text-slate-950 xl:flex xl:h-dvh xl:flex-col xl:overflow-hidden">
     <header className={`${embedMode ? "hidden" : ""} shrink-0 border-b border-slate-200 bg-white`}>
       <div className="mx-auto flex w-full max-w-[2200px] items-center justify-between gap-2 px-2.5 py-2.5 sm:px-4 lg:px-5 lg:py-3 2xl:px-7">
         <div className="flex min-w-0 items-center gap-2 sm:gap-3"><div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-blue-600 text-xl text-white shadow-lg shadow-blue-200 sm:h-11 sm:w-11 sm:rounded-2xl sm:text-2xl">▦</div><div className="min-w-0"><p className="truncate text-[10px] font-bold text-blue-600 sm:text-xs">통합 일정 공유</p><h1 className="truncate text-lg font-black tracking-tight sm:text-2xl">일정공유달력</h1><p className="hidden text-xs text-slate-500 sm:block">공공과 · 지역센터 · 보조기기센터 · 수리지원센터</p></div></div>
         <div className="flex items-center gap-2">{user && <span className={`hidden rounded-xl px-3 py-2 text-sm font-bold sm:block ${isAdmin ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>● {isAdmin ? "관리자 접속 중" : "등록 권한 없는 계정"}</span>}{user ? <button className="button-secondary" onClick={signOutUser}>로그아웃</button> : <button className="button-primary" onClick={handleSignIn}>관리자 로그인</button>}</div>
       </div>
     </header>
-    <main className="mx-auto w-full min-w-0 max-w-[2200px] overflow-x-hidden px-3 py-3 sm:px-4 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:px-5 lg:py-3 2xl:px-7">
+    <main className="mx-auto w-full min-w-0 max-w-[2200px] overflow-x-hidden px-3 py-3 sm:px-4 lg:px-5 lg:py-3 xl:flex xl:min-h-0 xl:flex-1 xl:flex-col 2xl:px-7">
       {(error || authError) && <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-bold text-red-700">{authError || error}</div>}
-      <div className="grid w-full min-w-0 gap-3 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_380px] 2xl:grid-cols-[minmax(0,1fr)_420px]">
-        <div className="w-full min-w-0 lg:flex lg:min-h-0 lg:flex-col">
+      <div className="grid w-full min-w-0 gap-3 xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(0,1fr)_320px] 2xl:grid-cols-[minmax(0,1fr)_420px]">
+        <div className="w-full min-w-0 xl:flex xl:min-h-0 xl:flex-col">
           <section className="summary-grid mb-2 grid shrink-0 grid-cols-3 gap-1.5 sm:gap-2">
             <Summary color="bg-blue-600" label="이번 달 전체 일정" value={`${monthEvents.length}건`} note={filter === "all" ? "전체 구분 기준" : getGroup(filter).name} />
             <FocusSummary color="bg-emerald-600" label="지금 일정" event={currentEvent} empty={`${todayEvents.length ? "오늘 예정된 일정이 있습니다" : "현재 진행 일정 없음"}`} />
@@ -164,14 +165,14 @@ export default function SharedMonthlyCalendarKR() {
             </div>
           </section>
           <WeekTimeline days={weekDays} events={visibleEvents} today={today} selectedDate={selectedDate} select={(date) => { setSelectedDate(date); setViewDate(date); }} />
-          <section className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:rounded-2xl">
+          <section className="w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm lg:rounded-2xl xl:flex xl:min-h-0 xl:flex-1 xl:flex-col">
             <div className="w-full min-w-0 lg:hidden"><div className="grid w-full min-w-0 grid-cols-7 border-b border-slate-200 bg-slate-50">{["일", "월", "화", "수", "목", "금", "토"].map((day, index) => <div key={day} className={`min-w-0 py-2 text-center text-xs font-black ${index === 0 ? "text-red-500" : index === 6 ? "text-blue-500" : "text-slate-600"}`}>{day}</div>)}</div><div className="grid w-full min-w-0 grid-cols-7">{calendarDays(viewDate).map((date) => <MobileDay key={toKey(date)} date={date} holidayNames={holidays[toKey(date)] || []} events={visibleEvents[toKey(date)] || []} faded={date.getMonth() !== viewDate.getMonth()} today={sameDay(date, today)} selected={sameDay(date, selectedDate)} select={() => setSelectedDate(date)} />)}</div></div>
-            <div className="hidden overflow-x-auto lg:flex lg:min-h-0 lg:flex-1 lg:flex-col"><div className="min-w-[680px] lg:flex lg:min-h-0 lg:flex-1 lg:flex-col"><div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50">{["일", "월", "화", "수", "목", "금", "토"].map((day, index) => <div key={day} className={`py-2.5 text-center text-base font-black ${index === 0 ? "text-red-500" : index === 6 ? "text-blue-500" : "text-slate-700"}`}>{day}</div>)}</div><div className="calendar-grid grid grid-cols-7 lg:min-h-0 lg:flex-1">{calendarDays(viewDate).map((date) => <Day key={toKey(date)} date={date} holidayNames={holidays[toKey(date)] || []} events={visibleEvents[toKey(date)] || []} faded={date.getMonth() !== viewDate.getMonth()} today={sameDay(date, today)} selected={sameDay(date, selectedDate)} select={() => setSelectedDate(date)} add={() => openForm(date)} />)}</div></div></div>
+            <div className="hidden w-full min-w-0 overflow-x-auto lg:flex lg:flex-col xl:min-h-0 xl:flex-1"><div className="w-full min-w-[680px] xl:flex xl:min-h-0 xl:flex-1 xl:flex-col"><div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50">{["일", "월", "화", "수", "목", "금", "토"].map((day, index) => <div key={day} className={`py-2.5 text-center text-base font-black ${index === 0 ? "text-red-500" : index === 6 ? "text-blue-500" : "text-slate-700"}`}>{day}</div>)}</div><div className="calendar-grid grid grid-cols-7 xl:min-h-0 xl:flex-1">{calendarDays(viewDate).map((date) => <Day key={toKey(date)} date={date} holidayNames={holidays[toKey(date)] || []} events={visibleEvents[toKey(date)] || []} faded={date.getMonth() !== viewDate.getMonth()} today={sameDay(date, today)} selected={sameDay(date, selectedDate)} select={() => setSelectedDate(date)} add={() => openForm(date)} />)}</div></div></div>
             {loading && <p className="border-t p-3 text-center text-sm text-slate-500">일정을 불러오는 중입니다…</p>}
           </section>
         </div>
-        <aside className="w-full min-w-0 max-w-full lg:min-h-0"><section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4 lg:flex lg:h-full lg:min-h-0 lg:flex-col">
-          <div className="mb-4 flex items-start justify-between gap-2"><div className="min-w-0"><p className="text-xs font-bold text-blue-600 xl:text-sm">선택한 날짜</p><h2 className="mt-1 whitespace-nowrap text-base font-black xl:text-lg 2xl:text-xl">{formatDate(selectedDate)}</h2></div><button className={`${isAdmin ? "button-primary" : "button-disabled"} shrink-0 whitespace-nowrap !px-3`} onClick={() => openForm(selectedDate)} disabled={!isAdmin}>＋ 일정</button></div>
+        <aside className="w-full min-w-0 max-w-full xl:min-h-0"><section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4 xl:flex xl:h-full xl:min-h-0 xl:flex-col">
+          <div className="mb-4 flex items-start justify-between gap-2"><div className="min-w-0"><p className="text-xs font-bold text-blue-600 xl:text-sm">선택한 날짜</p><h2 className="mt-1 whitespace-nowrap text-base font-black xl:text-lg 2xl:text-xl">{formatDate(selectedDate)}</h2></div>{embedMode ? <a href={standaloneUrl} target="_blank" rel="noopener noreferrer" className="button-primary shrink-0 whitespace-nowrap !px-3">일정 등록하기 ↗</a> : <button className={`${isAdmin ? "button-primary" : "button-disabled"} shrink-0 whitespace-nowrap !px-3`} onClick={() => openForm(selectedDate)} disabled={!isAdmin}>＋ 일정</button>}</div>
           {selectedEvents.length ? <div className="max-h-[50vh] space-y-2 overflow-y-auto pr-1">{selectedEvents.map((event) => <Event key={event.id} event={event} admin={isAdmin} edit={() => openEditForm(event)} remove={() => remove(event.id)} changeStatus={(status) => changeStatus(event.id, status)} />)}</div> : <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-center"><p className="font-bold text-slate-600">등록된 일정이 없습니다</p><p className="mt-1 text-sm text-slate-400">{isAdmin ? "일정 버튼을 눌러 등록하세요." : "등록 즉시 실시간으로 표시됩니다."}</p></div>}
           <div className="mt-4 flex min-h-0 flex-1 flex-col border-t border-slate-100 pt-4"><div className="mb-3 flex shrink-0 justify-between"><h3 className="font-black">이달 일정 목록</h3><span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold">{monthEvents.length}건</span></div><div className="min-h-0 flex-1 space-y-2 overflow-y-auto">{monthEvents.map((event) => <MonthItem key={`${event.startDateKey}-${event.id}`} event={event} select={() => setSelectedDate(event.date)} />)}</div></div>
         </section></aside>
