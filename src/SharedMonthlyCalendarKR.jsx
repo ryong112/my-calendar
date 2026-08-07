@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { db, watchAuth, signIn, signOutUser } from "./firebase";
+import { db, watchAuth, signIn, signOutUser, getAuthErrorMessage } from "./firebase";
 import { addDoc, collection, deleteDoc, doc, onSnapshot, query, serverTimestamp, where } from "firebase/firestore";
 import { getHolidayPreset } from "@hyunbinseo/holidays-kr";
 
@@ -37,6 +37,7 @@ export default function SharedMonthlyCalendarKR() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [authError, setAuthError] = useState("");
   const [draft, setDraft] = useState(null);
   const [saving, setSaving] = useState(false);
   const isAdmin = Boolean(user && ADMIN_EMAILS.includes(user.email || ""));
@@ -104,12 +105,20 @@ export default function SharedMonthlyCalendarKR() {
   const remove = async (id) => {
     if (isAdmin && window.confirm("이 일정을 삭제할까요?")) await deleteDoc(doc(db, "events", id));
   };
+  const handleSignIn = async () => {
+    setAuthError("");
+    try {
+      await signIn();
+    } catch (reason) {
+      setAuthError(getAuthErrorMessage(reason));
+    }
+  };
 
   return <div className="min-h-screen bg-slate-100 text-slate-950 lg:flex lg:h-dvh lg:flex-col lg:overflow-hidden">
     <header className="shrink-0 border-b border-slate-200 bg-white">
       <div className="mx-auto flex max-w-[1600px] flex-col gap-3 px-4 py-3 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-6">
         <div className="flex items-center gap-3"><div className="grid h-11 w-11 place-items-center rounded-2xl bg-blue-600 text-2xl text-white shadow-lg shadow-blue-200">▦</div><div><p className="text-xs font-bold text-blue-600">통합 일정 공유</p><h1 className="text-2xl font-black tracking-tight">일정공유달력</h1><p className="text-xs text-slate-500">공공과 · 지역센터 · 보조기기센터 · 수리지원센터</p></div></div>
-        <div className="flex items-center gap-2">{user && <span className="hidden rounded-xl bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-700 sm:block">● 관리자 접속 중</span>}{user ? <button className="button-secondary" onClick={signOutUser}>로그아웃</button> : <button className="button-primary" onClick={signIn}>관리자 로그인</button>}</div>
+        <div className="flex items-center gap-2">{user && <span className={`hidden rounded-xl px-3 py-2 text-sm font-bold sm:block ${isAdmin ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>● {isAdmin ? "관리자 접속 중" : "등록 권한 없는 계정"}</span>}{user ? <button className="button-secondary" onClick={signOutUser}>로그아웃</button> : <button className="button-primary" onClick={handleSignIn}>관리자 로그인</button>}</div>
       </div>
     </header>
     <main className="mx-auto w-full max-w-[1600px] px-4 py-4 sm:px-6 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:px-6 lg:py-3">
@@ -124,7 +133,7 @@ export default function SharedMonthlyCalendarKR() {
           <div className="flex flex-wrap gap-2"><Filter active={filter === "all"} label="전체 구분" onClick={() => setFilter("all")} />{GROUPS.map((group) => <Filter key={group.id} {...group} active={filter === group.id} label={group.name} onClick={() => setFilter(group.id)} />)}<select className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700" value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} aria-label="일정 카테고리 필터"><option value="all">모든 카테고리</option>{EVENT_TYPES.map((type) => <option key={type.id} value={type.id}>{type.icon} {type.name}</option>)}</select></div>
         </div>
       </section>
-      {error && <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-bold text-red-700">{error}</div>}
+      {(error || authError) && <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-bold text-red-700">{authError || error}</div>}
       <div className="grid gap-4 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_340px]">
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:flex lg:min-h-0 lg:flex-col"><div className="overflow-x-auto lg:flex lg:min-h-0 lg:flex-1 lg:flex-col"><div className="min-w-[680px] lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
           <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50">{["일", "월", "화", "수", "목", "금", "토"].map((day, index) => <div key={day} className={`py-3 text-center text-sm font-black ${index === 0 ? "text-red-500" : index === 6 ? "text-blue-500" : "text-slate-600"}`}>{day}</div>)}</div>
