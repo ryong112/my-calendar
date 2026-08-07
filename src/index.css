@@ -14,6 +14,10 @@ button:disabled { cursor: not-allowed; }
   .icon-button { @apply grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white text-2xl font-bold text-slate-600 shadow-sm hover:bg-slate-50; }
   .form-label { @apply mb-2 block text-sm font-bold text-slate-700; }
   .form-input { @apply w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100; }
+  .event-chip { @apply truncate rounded border-l-4 px-1.5 py-0.5 text-[11px] font-bold text-slate-700 shadow-sm; }
+  .event-chip.multi-start { @apply -mr-2 rounded-l-md rounded-r-none border-l-0 pl-2; }
+  .event-chip.multi-middle { @apply -mx-2 rounded-none border-l-0 px-2; }
+  .event-chip.multi-end { @apply -ml-2 rounded-l-none rounded-r-md border-l-0 pl-2; }
 }
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-thumb { border-radius: 999px; background: #cbd5e1; }
