@@ -1,5 +1,19 @@
-/* src/index.css */
 @import "tailwindcss";
 
-:root { color-scheme: dark; }
-html, body, #root { height: 100%; background: #0a0a0a; }
+:root { font-family: Pretendard, "Noto Sans KR", "Apple SD Gothic Neo", Inter, system-ui, sans-serif; color: #0f172a; background: #f1f5f9; font-synthesis: none; text-rendering: optimizeLegibility; }
+* { box-sizing: border-box; }
+html, body, #root { min-width: 320px; min-height: 100%; margin: 0; background: #f1f5f9; }
+button, input, textarea { font: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+
+@layer components {
+  .button-primary { @apply inline-flex min-h-10 items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50; }
+  .button-secondary { @apply inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50; }
+  .button-disabled { @apply inline-flex min-h-10 items-center justify-center rounded-xl bg-slate-100 px-4 py-2 text-sm font-bold text-slate-400; }
+  .icon-button { @apply grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white text-2xl font-bold text-slate-600 shadow-sm hover:bg-slate-50; }
+  .form-label { @apply mb-2 block text-sm font-bold text-slate-700; }
+  .form-input { @apply w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100; }
+}
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { border-radius: 999px; background: #cbd5e1; }
