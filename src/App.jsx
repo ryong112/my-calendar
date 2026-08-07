@@ -1,7 +1,7 @@
 // src/App.jsx
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import SharedMonthlyCalendarKR from "./SharedMonthlyCalendarKR";
-import { getAuthErrorMessage, isAuthHelperPage, signInFromAuthHelper } from "./firebase";
+import { finishAuthHelperRedirect, getAuthErrorMessage, isAuthHelperPage, signInFromAuthHelper } from "./firebase";
 
 export default function App() {
   if (isAuthHelperPage()) return <AuthHelper />;
@@ -11,6 +11,20 @@ export default function App() {
 function AuthHelper() {
   const [status, setStatus] = useState("ready");
   const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    finishAuthHelperRedirect()
+      .then((result) => {
+        if (result) {
+          setStatus("success");
+          setMessage("로그인이 완료되었습니다. 달력으로 돌아갑니다.");
+        }
+      })
+      .catch((error) => {
+        setStatus("error");
+        setMessage(getAuthErrorMessage(error));
+      });
+  }, []);
 
   const startLogin = async () => {
     setStatus("loading");

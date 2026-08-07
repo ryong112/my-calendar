@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { db, watchAuth, signIn, signOutUser, getAuthErrorMessage } from "./firebase";
+import { db, watchAuth, signIn, signOutUser, getAuthErrorMessage, finishRedirectSignIn } from "./firebase";
 import { addDoc, collection, deleteDoc, doc, onSnapshot, query, serverTimestamp, where } from "firebase/firestore";
 import { getHolidayPreset } from "@hyunbinseo/holidays-kr";
 
@@ -43,6 +43,9 @@ export default function SharedMonthlyCalendarKR() {
   const isAdmin = Boolean(user && ADMIN_EMAILS.includes(user.email || ""));
 
   useEffect(() => watchAuth(setUser), []);
+  useEffect(() => {
+    finishRedirectSignIn().catch((reason) => setAuthError(getAuthErrorMessage(reason)));
+  }, []);
   useEffect(() => {
     let active = true;
     const year = viewDate.getFullYear();

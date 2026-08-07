@@ -6,6 +6,8 @@ import {
   GoogleAuthProvider,
   signInWithCredential,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signOut,
   onAuthStateChanged,
 } from "firebase/auth";
@@ -30,7 +32,16 @@ export function watchAuth(callback) {
   return onAuthStateChanged(auth, callback);
 }
 export async function signIn() {
-  if (!isEmbedded()) return signInWithPopup(auth, provider);
+  if (!isEmbedded()) {
+    try {
+      return await signInWithPopup(auth, provider);
+    } catch (error) {
+      if (error?.code === "auth/popup-blocked") {
+        return signInWithRedirect(auth, provider);
+      }
+      throw error;
+    }
+  }
 
   const nonce = crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`;
   const helperUrl = new URL(window.location.href);
@@ -97,16 +108,13 @@ export async function signInFromAuthHelper() {
 
   try {
     const result = await signInWithPopup(auth, provider);
-    const credential = GoogleAuthProvider.credentialFromResult(result);
-    window.opener.postMessage({
-      type: "calendar-auth-result",
-      nonce,
-      idToken: credential?.idToken || null,
-      accessToken: credential?.accessToken || null,
-    }, window.location.origin);
-    window.setTimeout(() => window.close(), 350);
+    sendResultToOpener(result, nonce);
     return result;
   } catch (error) {
+    if (error?.code === "auth/popup-blocked") {
+      await signInWithRedirect(auth, provider);
+      return null;
+    }
     window.opener.postMessage({
       type: "calendar-auth-result",
       nonce,
@@ -114,6 +122,18 @@ export async function signInFromAuthHelper() {
     }, window.location.origin);
     throw error;
   }
+}
+
+export async function finishRedirectSignIn() {
+  return getRedirectResult(auth);
+}
+
+export async function finishAuthHelperRedirect() {
+  const nonce = new URLSearchParams(window.location.search).get("nonce");
+  if (!nonce) return null;
+  const result = await getRedirectResult(auth);
+  if (result) sendResultToOpener(result, nonce);
+  return result;
 }
 
 export function getAuthErrorMessage(error) {
@@ -132,6 +152,18 @@ function isEmbedded() {
   } catch {
     return true;
   }
+}
+
+function sendResultToOpener(result, nonce) {
+  if (!window.opener) throw new Error("원래 달력 창을 찾을 수 없습니다.");
+  const credential = GoogleAuthProvider.credentialFromResult(result);
+  window.opener.postMessage({
+    type: "calendar-auth-result",
+    nonce,
+    idToken: credential?.idToken || null,
+    accessToken: credential?.accessToken || null,
+  }, window.location.origin);
+  window.setTimeout(() => window.close(), 350);
 }
 
 export async function signOutUser() {
