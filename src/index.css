@@ -17,3 +17,11 @@ button:disabled { cursor: not-allowed; }
 }
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-thumb { border-radius: 999px; background: #cbd5e1; }
+
+@media (min-width: 1024px) {
+  .calendar-grid { grid-template-rows: repeat(6, minmax(0, 1fr)); }
+}
+
+@media (min-width: 1024px) and (max-height: 760px) {
+  .summary-grid { display: none; }
+}
