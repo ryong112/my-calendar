@@ -2,7 +2,9 @@
 // production rules from this fragment. An overlapping broad write allow
 // overrides narrower denials, so audit all enclosing and sibling matches.
 function dotCalendarWriter() {
-  return request.auth != null && request.auth.uid == "REPLACE_WITH_WRITER_UID";
+  return request.auth != null && request.auth.uid == "REPLACE_WITH_WRITER_UID"
+    && request.auth.token.firebase.sign_in_provider == "custom"
+    && request.auth.token.ddol_calendar_writer == true;
 }
 function validDotEvent(eventId) {
   let evt = request.resource.data;
@@ -31,3 +33,8 @@ allow create: if dotCalendarWriter() && validDotEvent(eventId);
 allow get: if dotCalendarWriter() && eventId.matches("^dot_[0-9a-f]{64}$")
   && resource.data.source == "dot" && resource.data.centerId == "gw-rehab-center";
 // Add no writer allowance for list, update, delete or any other collection.
+
+// Preserve the real owner write allowance with exact verified Google identity.
+ // Require the existing Google UID, verified account email and sign_in_provider
+ // == "google.com" before the owner's allow write. A temporary custom signing
+ // identity must never be eligible for the owner path.
