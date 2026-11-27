@@ -54,10 +54,10 @@ export function createHandler({ env = process.env, fetcher = globalThis.fetch, c
       res.setHeader("Allow", "POST");
       return send(res, 405, { error: "method_not_allowed" });
     }
-    const { DOT_CALENDAR_TOKEN, DOT_FIREBASE_API_KEY, DOT_FIREBASE_PROJECT_ID, DOT_FIREBASE_WRITER_UID, DOT_FIREBASE_WRITER_EMAIL, DOT_FIREBASE_WRITER_PASSWORD } = env;
+    const { DOT_CALENDAR_TOKEN, DOT_FIREBASE_API_KEY, DOT_FIREBASE_PROJECT_ID, DOT_FIREBASE_WRITER_UID, DOT_FIREBASE_WRITER_REFRESH_TOKEN } = env;
     if (!DOT_CALENDAR_TOKEN || !/^[A-Za-z0-9_-]{43,128}$/.test(DOT_CALENDAR_TOKEN) ||
         !DOT_FIREBASE_API_KEY || !/^[a-z][a-z0-9-]+$/.test(DOT_FIREBASE_PROJECT_ID ?? "") ||
-        !DOT_FIREBASE_WRITER_UID || !DOT_FIREBASE_WRITER_EMAIL || !DOT_FIREBASE_WRITER_PASSWORD) {
+        !DOT_FIREBASE_WRITER_UID || !DOT_FIREBASE_WRITER_REFRESH_TOKEN) {
       return send(res, 503, { error: "not_configured" });
     }
     const bearer = typeof req.headers.authorization === "string" && req.headers.authorization.match(/^Bearer ([A-Za-z0-9_-]{43,128})$/i);
@@ -70,14 +70,14 @@ export function createHandler({ env = process.env, fetcher = globalThis.fetch, c
     const { id, event } = parsed;
     const upstream = (url, options) => fetcher(url, { ...options, redirect: "error", signal: AbortSignal.timeout(6000) });
     try {
-      const auth = await upstream("https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=" + encodeURIComponent(DOT_FIREBASE_API_KEY), {
-        method: "POST", headers: jsonHeaders,
-        body: JSON.stringify({ email: DOT_FIREBASE_WRITER_EMAIL, password: DOT_FIREBASE_WRITER_PASSWORD, returnSecureToken: true }),
+      const auth = await upstream("https://securetoken.googleapis.com/v1/token?key=" + encodeURIComponent(DOT_FIREBASE_API_KEY), {
+        method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ grant_type: "refresh_token", refresh_token: DOT_FIREBASE_WRITER_REFRESH_TOKEN }).toString(),
       });
       const principal = auth.ok ? await auth.json() : null;
-      if (!principal?.idToken || principal.localId !== DOT_FIREBASE_WRITER_UID) return send(res, 502, { error: "writer_unavailable" });
+      if (!principal?.id_token || principal.user_id !== DOT_FIREBASE_WRITER_UID) return send(res, 502, { error: "writer_unavailable" });
       const resource = "https://firestore.googleapis.com/v1/projects/" + DOT_FIREBASE_PROJECT_ID + "/databases/(default)/documents/events";
-      const headers = { ...jsonHeaders, Authorization: "Bearer " + principal.idToken };
+      const headers = { ...jsonHeaders, Authorization: "Bearer " + principal.id_token };
       const fields = Object.fromEntries(Object.entries(event).map(([key, value]) => [key, { stringValue: value }]));
       const now = { timestampValue: clock().toISOString() };
       const response = await upstream(resource + "?documentId=" + id, {
