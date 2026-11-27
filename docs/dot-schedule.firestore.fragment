@@ -1,0 +1,33 @@
+// Merge into the actual deployed match /events/{eventId}; do not replace
+// production rules from this fragment. An overlapping broad write allow
+// overrides narrower denials, so audit all enclosing and sibling matches.
+function dotCalendarWriter() {
+  return request.auth != null && request.auth.uid == "REPLACE_WITH_WRITER_UID";
+}
+function validDotEvent(eventId) {
+  let evt = request.resource.data;
+  let fields = ["centerId", "dateKey", "startDateKey", "endDateKey", "startTime",
+    "endTime", "title", "body", "location", "group", "eventType", "status",
+    "priority", "source", "createdAt", "updatedAt"];
+  return eventId.matches("^dot_[0-9a-f]{64}$")
+    && evt.keys().hasAll(fields) && evt.keys().hasOnly(fields)
+    && evt.centerId == "gw-rehab-center" && evt.dateKey == evt.startDateKey
+    && evt.startDateKey is string && evt.startDateKey.matches("^20[0-9]{2}-[0-9]{2}-[0-9]{2}$")
+    && evt.endDateKey is string && evt.endDateKey.matches("^20[0-9]{2}-[0-9]{2}-[0-9]{2}$")
+    && evt.startDateKey <= evt.endDateKey
+    && evt.startTime is string && (evt.startTime == "" || evt.startTime.matches("^([01][0-9]|2[0-3]):[0-5][0-9]$"))
+    && evt.endTime is string && (evt.endTime == "" || (evt.startTime != "" && evt.endTime.matches("^([01][0-9]|2[0-3]):[0-5][0-9]$")))
+    && (evt.startDateKey != evt.endDateKey || evt.endTime == "" || evt.startTime < evt.endTime)
+    && evt.title is string && evt.title.size() > 0 && evt.title.size() <= 140
+    && evt.body is string && evt.body.size() <= 1200 && evt.location is string && evt.location.size() <= 200
+    && evt.group in ["public", "regional", "assistive", "repair", "general"]
+    && evt.eventType in ["business", "meeting", "education", "vacation", "visit", "other"]
+    && evt.status in ["planned", "confirmed"] && evt.priority == "normal" && evt.source == "dot"
+    && evt.createdAt is timestamp && evt.updatedAt == evt.createdAt
+    && evt.createdAt >= request.time - duration.value(120, "s")
+    && evt.createdAt <= request.time + duration.value(120, "s");
+}
+allow create: if dotCalendarWriter() && validDotEvent(eventId);
+allow get: if dotCalendarWriter() && eventId.matches("^dot_[0-9a-f]{64}$")
+  && resource.data.source == "dot" && resource.data.centerId == "gw-rehab-center";
+// Add no writer allowance for list, update, delete or any other collection.
