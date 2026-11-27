@@ -5,7 +5,7 @@ const valid = { requestKey: "google:synthetic-example-event-001", title: "예시
 const token = "s".repeat(43);
 const env = {
   DOT_CALENDAR_TOKEN: token, DOT_FIREBASE_API_KEY: "fake-api-key", DOT_FIREBASE_PROJECT_ID: "example-project",
-  DOT_FIREBASE_WRITER_UID: "writer", DOT_FIREBASE_WRITER_EMAIL: "writer@example.test", DOT_FIREBASE_WRITER_PASSWORD: "test-only-password",
+  DOT_FIREBASE_WRITER_UID: "writer", DOT_FIREBASE_WRITER_REFRESH_TOKEN: "test-only-refresh",
 };
 async function call(handler, override = {}) {
   const res = { headers: {}, setHeader(k, v) { this.headers[k] = v; }, status(s) { this.code = s; return this; }, json(body) { this.body = body; return this; } };
@@ -40,9 +40,13 @@ test("create, same-key exact replay, and conflict after changed content", async 
   const db = new Map();
   let signedIn = 0;
   const h = createHandler({ env, fetcher: async (url, opt) => {
-    if (url.startsWith("https://identitytoolkit.googleapis.com/")) {
+    if (url.startsWith("https://securetoken.googleapis.com/")) {
+      assert.equal(new URL(url).pathname, "/v1/token");
+      assert.equal(opt.headers["Content-Type"], "application/x-www-form-urlencoded");
+      assert.equal(new URLSearchParams(opt.body).get("grant_type"), "refresh_token");
+      assert.equal(new URLSearchParams(opt.body).get("refresh_token"), "test-only-refresh");
       signedIn++;
-      return new Response(JSON.stringify({ localId: "writer", idToken: "fake-id-token" }));
+      return new Response(JSON.stringify({ user_id: "writer", id_token: "fake-id-token" }));
     }
     assert.match(url, /^https:\/\/firestore\.googleapis\.com\//);
     assert.equal(opt.headers.Authorization, "Bearer fake-id-token");
@@ -52,7 +56,7 @@ test("create, same-key exact replay, and conflict after changed content", async 
     if (db.has(id)) return new Response("", { status: 409 });
     const obj = JSON.parse(opt.body);
     assert.equal(obj.fields.source.stringValue, "dot");
-    assert.doesNotMatch(opt.body, /test-only-password|requestKey/);
+    assert.doesNotMatch(opt.body, /test-only-refresh|requestKey/);
     db.set(id, obj);
     return new Response("{}", { status: 200 });
   } });
@@ -67,7 +71,7 @@ test("refuses a credential for the wrong Firebase UID; upstream secrets are not 
   let n = 0;
   const h = createHandler({ env, fetcher: async () => {
     n++;
-    return new Response(JSON.stringify({ localId: "wrong", idToken: "private" }));
+    return new Response(JSON.stringify({ user_id: "wrong", id_token: "private" }));
   } });
   assert.deepEqual((await call(h)).body, { error: "writer_unavailable" });
   assert.equal(n, 1);
